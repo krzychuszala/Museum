@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <semaphore.h> // sem_t
+#include <time.h> // rand()
+#include <stdlib.h>  // srand()
+#include <pthread.h> // pthread_join()
+#include <unistd.h> // sleep
 #define AmountOfPeople 10
 #define Na 3
 #define Nb 5     //  (Nb < Na)!!!
