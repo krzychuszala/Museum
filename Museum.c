@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <time.h> // rand()
-#include <stdlib.h>  // srand()
-#include <pthread.h> // pthread_join()
-#include <unistd.h> // sleep
 #define AmountOfPeople 10
 #define Na 3
 #define Nb 5     //  (Nb < Na)!!!
@@ -10,8 +5,11 @@
 #define maxB 500000  // mikrosekundy, czyli 1000000 = 1 sekunda
 #define addPace 500 // co ile czasu próbuje znów dodać kolejny proces
 
-static int A = 0; // counter of people in hall A
-static int B = 0; // counter of people in hall B
+// static int A = 0; // counter of people in hall A
+// static int B = 0; // counter of people in hall B
+
+sem_t A;
+sem_t B;
 
 typedef struct Person
 {
@@ -25,37 +23,43 @@ void hallB();
 
 void* hallA(void*arg)
 {
+	sem_wait(&A);
 	Person*x = (Person*)arg;
-	A++;
-	printf("%d\t",x->watchA);
-//	usleep(x->watchA);
-//	printf("%d oto jest goB\t",x->goB);
+//	A++;
 
+	usleep(x->watchA);
+	x->watchA = 0;
+
+	/*
 	while(B > Nb)
 	{
 	sleep(1);
 	printf("I am waiting for going to B\n");
 	}
 
+
 	if(x->goB == 1)
 	{
 		hallB();
 	}
-
-
-	printf("Koniec procesu nr%d\n", x->id);
-	A--;
+	*/
+	int warto;
+	sem_getvalue(&A,&warto);
+	printf("Koniec procesu nr%d %d \n", x->id,warto);
+//	A--;
+	sem_post(&A);
 	return NULL;
 }
 
 void hallB(void *arg)
 {
 	Person*x = (Person*)arg;
-	B++;
+//	B++;
 	usleep(x->watchB);
+	x->watchB = 0;
 	x->goB--;
 	printf("Jestem w B %d\t",x->watchB);
-	B--;
+//	B--;
 //	return NULL;
 }
 
@@ -63,9 +67,13 @@ int main()
 {
 	srand(time(NULL));
 
+	sem_init(&A,0,Na);
+	sem_init(&B,0,Nb);
+
 	pthread_t newthread[AmountOfPeople];
 
 	Person tab[AmountOfPeople];
+//----------------------------------------Initializing visitors------------------
 	for(int i=0;i<AmountOfPeople;i++)
 	{
 		tab[i].id = i;
@@ -75,13 +83,9 @@ int main()
 		tab[i].watchB = rand()%maxB;
 	}
 
+//--------------------------------Calling threads--------------------
 	for(int i=0;i<10;i++)
 	{
-		while(A > Na)
-		{
-			printf("waiting for A %d\n",A);
-			sleep(1);
-		}
 		pthread_create(&newthread[i], NULL, hallA, &tab[i]);
 	}
 
