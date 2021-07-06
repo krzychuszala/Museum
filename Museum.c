@@ -30,6 +30,8 @@ void* hallA(void*arg)
 	sem_wait(&A);
 	Person*x = (Person*)arg;
 
+	printf("Zwiedzanie A nr%d \n", x->id);
+
 	usleep(x->watchA);// sightseeing hall A
 	x->watchA = 0;
 
@@ -38,13 +40,12 @@ void* hallA(void*arg)
 		sem_post(&A);
 		pthread_t threadB;
 		pthread_create(&threadB, NULL, hallB, arg);
+		pthread_join(threadB,NULL);
 		sem_wait(&A);
 	}
 
-	int warto;
-	sem_getvalue(&A,&warto);
-	printf("Koniec procesu nr%d %d \n", x->id,warto);
 
+	printf("Wychodze z A nr%d \t", x->id);
 	sem_post(&A);
 	return NULL;
 }
@@ -54,14 +55,16 @@ void*hallB(void *arg)
 	sem_wait(&B);
 	Person*x = (Person*)arg;
 
+	printf("Zwiedzanie B nr%d \n", x->id);
 	usleep(x->watchB);// sightseeing hall B
 	x->watchB = 0;
+
 	int w;
 	sem_getvalue(&B,&w);
-	printf("Jestem w B nr%d %d\t",x->id,w);
 	x->goB--;
-	sem_post(&B);
 
+	printf("Wychodze z B nr%d \t", x->id);
+	sem_post(&B);
 	return NULL;
 }
 
@@ -92,8 +95,10 @@ int main()
 	}
 
 
-	for(int i=0;i<10;i++)
+	for(int i=0;i<10;i++) // Assuring that everybody left museum
 	{
 		pthread_join(newthread[i], NULL);
 	}
+
+	printf("\n");
 }
