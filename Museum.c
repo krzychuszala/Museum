@@ -11,11 +11,9 @@
 #define maxB 500000  // mikrosekundy, czyli 1000000 = 1 sekunda
 #define addPace 500 // co ile czasu próbuje znów dodać kolejny proces
 
-// static int A = 0; // counter of people in hall A
-// static int B = 0; // counter of people in hall B
 
 sem_t A;
-sem_t B;
+sem_t B; // counter of people in hall
 
 typedef struct Person
 {
@@ -25,48 +23,46 @@ typedef struct Person
 	unsigned int watchB; // jak długo B
 }Person;
 
-void hallB();
+void* hallB(void*arg);
 
 void* hallA(void*arg)
 {
 	sem_wait(&A);
 	Person*x = (Person*)arg;
-//	A++;
 
-	usleep(x->watchA);
+	usleep(x->watchA);// sightseeing hall A
 	x->watchA = 0;
-
-	/*
-	while(B > Nb)
-	{
-	sleep(1);
-	printf("I am waiting for going to B\n");
-	}
-
 
 	if(x->goB == 1)
 	{
-		hallB();
+		sem_post(&A);
+		pthread_t threadB;
+		pthread_create(&threadB, NULL, hallB, arg);
+		sem_wait(&A);
 	}
-	*/
+
 	int warto;
 	sem_getvalue(&A,&warto);
 	printf("Koniec procesu nr%d %d \n", x->id,warto);
-//	A--;
+
 	sem_post(&A);
 	return NULL;
 }
 
-void hallB(void *arg)
+void*hallB(void *arg)
 {
+	sem_wait(&B);
 	Person*x = (Person*)arg;
-//	B++;
-	usleep(x->watchB);
+
+	usleep(x->watchB);// sightseeing hall B
 	x->watchB = 0;
+	int w;
+	sem_getvalue(&B,&w);
+	printf("Jestem w B nr%d %d\t",x->id,w);
 	x->goB--;
-	printf("Jestem w B %d\t",x->watchB);
-//	B--;
-//	return NULL;
+	sem_post(&B);
+
+	return NULL;
 }
 
 int main()
