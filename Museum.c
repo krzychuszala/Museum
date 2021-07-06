@@ -4,10 +4,10 @@
 #include <stdlib.h>  // srand()
 #include <pthread.h> // pthread_join()
 #include <unistd.h> // sleep
-#define AmountOfPeople 10
-#define Na 3
-#define Nb 5     //  (Nb < Na)!!!
-#define maxA 500000  // jak długo zajmię maksymalnie oglądanie wystawy A
+#define AmountOfPeople 30
+#define Na 4
+#define Nb 3     //  (Nb < Na)!!!
+#define maxA 5000000  // jak długo zajmię maksymalnie oglądanie wystawy A
 #define maxB 500000  // mikrosekundy, czyli 1000000 = 1 sekunda
 #define addPace 500 // co ile czasu próbuje znów dodać kolejny proces
 
@@ -45,8 +45,8 @@ void* hallA(void*arg)
 	}
 
 
-	printf("Wychodze z A nr%d \t", x->id);
 	sem_post(&A);
+	printf("Wychodze z A nr%d \t", x->id);
 	return NULL;
 }
 
@@ -63,8 +63,17 @@ void*hallB(void *arg)
 	sem_getvalue(&B,&w);
 	x->goB--;
 
-	printf("Wychodze z B nr%d \t", x->id);
 	sem_post(&B);
+	printf("Wychodze z B nr%d \t", x->id);
+
+		int a,b;
+		sem_getvalue(&A,&a);
+		sem_getvalue(&B,&b);
+		printf("%d %d \n",a,b);
+		if(a == 0 && b == 0)
+		{
+			printf("Deadlock\n");
+		}
 	return NULL;
 }
 
@@ -83,19 +92,19 @@ int main()
 	{
 		tab[i].id = i;
 		tab[i].watchA = rand()%maxA;
-		int l = rand()%2;
+		int l = 1; // rand()%2;
 		tab[i].goB = l;
 		tab[i].watchB = rand()%maxB;
 	}
 
 //--------------------------------Calling threads--------------------
-	for(int i=0;i<10;i++)
+	for(int i=0;i<AmountOfPeople;i++)
 	{
 		pthread_create(&newthread[i], NULL, hallA, &tab[i]);
 	}
 
 
-	for(int i=0;i<10;i++) // Assuring that everybody left museum
+	for(int i=0;i<AmountOfPeople;i++) // Assuring that everybody left museum
 	{
 		pthread_join(newthread[i], NULL);
 	}
