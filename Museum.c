@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sched.h> // scheduling functions
 #include <semaphore.h> // sem_t
 #include <time.h> // rand()
 #include <stdlib.h>  // srand()
@@ -37,11 +38,11 @@ void* hallA(void*arg)
 
 	if(x->goB == 1)
 	{
+		sem_wait(&B);
 		sem_post(&A);
 		pthread_t threadB;
 		pthread_create(&threadB, NULL, hallB, arg);
 		pthread_join(threadB,NULL);
-		sem_wait(&A);
 	}
 
 
@@ -52,7 +53,6 @@ void* hallA(void*arg)
 
 void*hallB(void *arg)
 {
-	sem_wait(&B);
 	Person*x = (Person*)arg;
 
 	printf("Zwiedzanie B nr%d \n", x->id);
@@ -63,8 +63,6 @@ void*hallB(void *arg)
 	sem_getvalue(&B,&w);
 	x->goB--;
 
-	sem_post(&B);
-	printf("Wychodze z B nr%d \t", x->id);
 
 		int a,b;
 		sem_getvalue(&A,&a);
@@ -74,6 +72,10 @@ void*hallB(void *arg)
 		{
 			printf("Deadlock\n");
 		}
+
+	sem_wait(&A);
+	sem_post(&B);
+	printf("Wychodze z B nr%d \t", x->id);
 	return NULL;
 }
 
@@ -83,6 +85,8 @@ int main()
 
 	sem_init(&A,0,Na);
 	sem_init(&B,0,Nb);
+
+//	sched_setscheduler(
 
 	pthread_t newthread[AmountOfPeople];
 
