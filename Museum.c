@@ -1,31 +1,31 @@
 #include <stdio.h>
+#include <sys/resource.h> // getpriority
 #include <sched.h> // scheduling functions
 #include <semaphore.h> // sem_t
 #include <time.h> // rand()
 #include <stdlib.h>  // srand()
 #include <pthread.h> // pthread_join()
-#include <unistd.h> // sleep
+#include <unistd.h> // sleep, nice
 
 // These variables are supposed to be change
 
 #define AmountOfPeople 30
-#define Na 4
+#define Na 10
 #define Nb 3     //  (Nb < Na)!!!
-#define maxA 5000000  // jak długo zajmię maksymalnie oglądanie wystawy A
-#define maxB 500000  // mikrosekundy, czyli 1000000 = 1 sekunda
+#define maxA 5000000  // max time for watching exhibition A
+#define maxB 500000  // microseconds, 1000000 = 1 second
 
 
 sem_t A;
 sem_t B; // counter of people in hall
 sem_t Dead; // to prevent deadlock situation
-//pthread_mutex_t deadlockP;
 
 typedef struct Person
 {
-	unsigned int id; // nr procesu w programie
-	unsigned int watchA; // jak długo będzie oglądał hale A
-	int goB; // czy chce isć do hali B
-	unsigned int watchB; // jak długo B
+	unsigned int id; // threads id
+	unsigned int watchA; // time for watching A
+	int goB; // does he want to go to hall B or not
+	unsigned int watchB; // time for hall B
 }Person;
 
 
@@ -33,25 +33,18 @@ void* hallB(void*arg);
 
 void* hallA(void*arg)
 {
+	Person*x = (Person*)arg;
 
-		int a,b;
-		sem_getvalue(&A,&a);
-		sem_getvalue(&B,&b);
-	//	printf("%d %d \n",a,b);
+	if(x->goB == 1)
+	{
+		int inc = 19;
+		int check = setpriority(PRIO_PROCESS, 0, inc);
+	}
 
 	sem_wait(&Dead);
 	sem_wait(&A);
-	Person*x = (Person*)arg;
-/*
-	struct sched_param param;
-	param.sched_priority = 50;
 
-	int ret = sched_setscheduler(0,SCHED_FIFO,&param);
-
-		int inc = 19;
-		nice(inc);
-*/
-		printf("Zwiedzanie A nr%d \n", x->id);
+	printf("Zwiedzanie A nr%d \n", x->id);
 
 	usleep(x->watchA);// sightseeing hall A
 	x->watchA = 0;
@@ -63,18 +56,11 @@ void* hallA(void*arg)
 		pthread_t threadB;
 		pthread_create(&threadB, NULL, hallB, arg);
 		pthread_join(threadB,NULL);
-/*		int inc = -20;
-		nice(inc);
-
-		param.sched_priority = 9;
-		int ret = sched_setscheduler(0,SCHED_FIFO,&param);
-*/
 	}
-
 
 	sem_post(&A);
 	sem_post(&Dead);
-	printf("Wychodze z A nr%d \t", x->id);
+	printf("Wychodze z A nr%d \n", x->id);
 	return NULL;
 }
 
@@ -87,11 +73,9 @@ void*hallB(void *arg)
 	x->watchB = 0;
 	x->goB--;
 
-
 		int a,b;
 		sem_getvalue(&A,&a);
 		sem_getvalue(&B,&b);
-	//	printf("%d %d \n",a,b);
 		if(a == 0 && b == 0)
 		{
 			printf("Deadlock\n");
@@ -99,7 +83,7 @@ void*hallB(void *arg)
 
 	sem_wait(&A);
 	sem_post(&B);
-	printf("Wychodze z B nr%d \t", x->id);
+	printf("Wychodze z B nr%d \n", x->id);
 	return NULL;
 }
 
