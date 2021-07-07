@@ -10,7 +10,7 @@
 // These variables are supposed to be change
 
 #define AmountOfPeople 30
-#define Na 10
+#define Na 5
 #define Nb 3     //  (Nb < Na)!!!
 #define maxA 5000000  // max time for watching exhibition A
 #define maxB 500000  // microseconds, 1000000 = 1 second
@@ -34,6 +34,9 @@ void* hallB(void*arg);
 void* hallA(void*arg)
 {
 	Person*x = (Person*)arg;
+	x->watchA = rand()%maxA;
+	int l = rand()%2;
+	x->goB = l;
 
 	if(x->goB == 1)
 	{
@@ -67,6 +70,7 @@ void* hallA(void*arg)
 void*hallB(void *arg)
 {
 	Person*x = (Person*)arg;
+	x->watchB = rand()%maxB;
 
 	printf("Zwiedzanie B nr%d \n", x->id);
 	usleep(x->watchB);// sightseeing hall B
@@ -105,10 +109,6 @@ int main()
 	for(int i=0;i<AmountOfPeople;i++)
 	{
 		tab[i].id = i;
-		tab[i].watchA = rand()%maxA;
-		int l = rand()%2;
-		tab[i].goB = l;
-		tab[i].watchB = rand()%maxB;
 	}
 
 //--------------------------------Calling threads--------------------
